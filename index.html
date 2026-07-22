@@ -31,12 +31,11 @@
         /* Styling khusus saat proses export JPG agar terlihat seperti hasil print */
         .export-mode .no-print { display: none !important; }
         .export-mode input, .export-mode textarea, .export-mode select {
-            border: none !important;
+            border-color: transparent !important;
             background: transparent !important;
             resize: none !important;
-            padding: 0 !important;
             box-shadow: none !important;
-            overflow: hidden !important;
+            overflow: visible !important;
         }
         .export-mode .editable-text {
             border: none !important;
@@ -49,6 +48,14 @@
         .export-mode-container {
             background-color: white !important;
             padding: 20px !important;
+        }
+        
+        /* Mencegah gambar menjadi gepeng/terpotong saat export JPG */
+        .export-mode img.object-cover {
+            object-fit: contain !important;
+            height: auto !important;
+            max-height: 400px !important;
+            width: 100% !important;
         }
 
         .editable-text:empty:before {
@@ -579,22 +586,50 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merender JPG...';
             btn.disabled = true;
 
+            const reportContainer = document.getElementById('main-report-container');
+
+            // --- PERBAIKAN: Paksa ukuran layout desktop agar tidak berantakan/terpotong walau diekspor via HP ---
+            const originalWidth = reportContainer.style.width;
+            const originalMaxWidth = reportContainer.style.maxWidth;
+            reportContainer.style.width = '1024px';
+            reportContainer.style.maxWidth = '1024px';
+
             // Memastikan textarea tidak memiliki scroll sebelum render
             resizeAllTextareas();
 
             // Aktifkan mode ekspor untuk sembunyikan UI input/tombol
             document.body.classList.add('export-mode');
-            const reportContainer = document.getElementById('main-report-container');
             reportContainer.classList.add('export-mode-container');
 
             try {
-                // Konfigurasi html2canvas - Scale 3 agar beresolusi tinggi (HD)
+                // Konfigurasi html2canvas - Scale 2 sudah cukup untuk HD (lebih stabil dari memory crash)
                 const canvas = await html2canvas(reportContainer, {
-                    scale: 3, 
+                    scale: 2, 
                     useCORS: true,
                     backgroundColor: '#ffffff',
-                    windowWidth: document.documentElement.offsetWidth,
-                    windowHeight: document.documentElement.offsetHeight,
+                    windowWidth: 1024,
+                    onclone: function(clonedDoc) {
+                        // PERBAIKAN: Ubah semua textarea menjadi div agar teks panjang tidak pernah terpotong (issue bawaan html2canvas)
+                        const textareas = clonedDoc.querySelectorAll('textarea');
+                        textareas.forEach(ta => {
+                            const div = clonedDoc.createElement('div');
+                            // Konversi baris baru (enter) menjadi tag <br>
+                            div.innerHTML = ta.value ? ta.value.replace(/\n/g, '<br/>') : '';
+                            div.className = ta.className; // Copy Tailwind classes
+                            div.style.whiteSpace = 'pre-wrap';
+                            div.style.wordBreak = 'break-word';
+                            
+                            // Sisipkan div pengganti dan sembunyikan textarea asli
+                            ta.parentNode.insertBefore(div, ta);
+                            ta.style.display = 'none';
+                        });
+
+                        // Bersihkan teks placeholder pada input kosong agar hasilnya bersih seperti dokumen PDF
+                        const inputs = clonedDoc.querySelectorAll('input');
+                        inputs.forEach(inp => {
+                            if (!inp.value) inp.placeholder = '';
+                        });
+                    }
                 });
 
                 const eventName = document.getElementById('infoEvent').value || 'Pekerjaan';
@@ -609,13 +644,21 @@
 
             } catch (error) {
                 console.error("Gagal export JPG:", error);
-                alert("Terjadi kesalahan saat merender JPG. Coba perkecil ukuran window.");
+                alert("Terjadi kesalahan saat merender JPG. Coba ulangi kembali.");
             } finally {
                 // Matikan mode ekspor, kembalikan UI normal
                 document.body.classList.remove('export-mode');
                 reportContainer.classList.remove('export-mode-container');
+                
+                // Kembalikan ukuran layout normal (responsif)
+                reportContainer.style.width = originalWidth;
+                reportContainer.style.maxWidth = originalMaxWidth;
+                
                 btn.innerHTML = originalText;
                 btn.disabled = false;
+                
+                // Kalkulasi ulang textarea berdasarkan layar asli device
+                resizeAllTextareas();
             }
         }
 
