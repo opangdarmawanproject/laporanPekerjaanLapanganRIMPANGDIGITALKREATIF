@@ -6,8 +6,11 @@
     <title>Laporan Pekerjaan Lapangan RIMPANG DIGITAL KREATIF</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+    
+    <!-- Library untuk save file (FileSaver) dan export JPG (html2canvas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <style>
         @media print {
             .no-print { display: none !important; }
@@ -20,11 +23,34 @@
                 resize: none !important;
                 padding: 0 !important;
                 box-shadow: none !important;
-                overflow: visible !important;
+                overflow: hidden !important;
             }
             .img-preview { max-width: 300px !important; max-height: 200px !important; }
-            .border-dashed { border-style: solid !important; border-color: #000 !important; }
         }
+
+        /* Styling khusus saat proses export JPG agar terlihat seperti hasil print */
+        .export-mode .no-print { display: none !important; }
+        .export-mode input, .export-mode textarea, .export-mode select {
+            border: none !important;
+            background: transparent !important;
+            resize: none !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+        }
+        .export-mode .editable-text {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        .export-mode {
+            background-color: white !important;
+        }
+        .export-mode-container {
+            background-color: white !important;
+            padding: 20px !important;
+        }
+
         .editable-text:empty:before {
             content: attr(data-placeholder);
             color: #94a3b8;
@@ -34,16 +60,20 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
-    <div class="max-w-5xl mx-auto p-4 md:p-8">
-        <div class="bg-white rounded-xl shadow-lg p-6 md:p-10 border-t-4 border-amber-500 mb-8">
+    <div id="main-report-container" class="max-w-5xl mx-auto p-4 md:p-8 transition-colors">
+        <div class="bg-white rounded-xl shadow-lg p-6 md:p-10 border-t-4 border-amber-500 mb-8 export-block">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-200 pb-6 mb-6">
                 <div>
                     <h1 class="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">LAPORAN PEKERJAAN LAPANGAN</h1>
                     <h2 class="text-lg md:text-xl font-semibold text-amber-600 mt-1">RIMPANG DIGITAL KREATIF</h2>
                 </div>
-                <div class="mt-4 md:mt-0 flex gap-3 no-print">
-                    <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
-                        <i class="fas fa-file-excel"></i> Ekspor Excel
+                
+                <div class="mt-4 md:mt-0 flex flex-wrap gap-2 md:gap-3 no-print">
+                    <button id="btn-word" onclick="exportToWord()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+                        <i class="fas fa-file-word"></i> Ekspor Word (.doc)
+                    </button>
+                    <button id="btn-jpg" onclick="exportToJPG()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+                        <i class="fas fa-image"></i> Ekspor JPG (HD)
                     </button>
                     <button onclick="window.print()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
                         <i class="fas fa-print"></i> Cetak PDF / Print
@@ -81,7 +111,7 @@
             </button>
         </div>
 
-        <div class="mt-16 pt-8 border-t-2 border-slate-200 print-break-inside-avoid">
+        <div class="mt-16 pt-8 border-t-2 border-slate-200 print-break-inside-avoid export-block pb-8">
             <div class="grid grid-cols-2 gap-8 text-center">
                 <div>
                     <p class="text-sm font-semibold text-slate-600 mb-24">PIC Vendor</p>
@@ -148,7 +178,7 @@
 
         function loadData() {
             try {
-                const savedData = localStorage.getItem('rimpang_data_v2');
+                const savedData = localStorage.getItem('rimpang_data_v3');
                 if (savedData) {
                     const parsed = JSON.parse(savedData);
                     checklistData = parsed.checklist || initDefaultData();
@@ -184,10 +214,9 @@
                 checklist: checklistData
             };
             try {
-                localStorage.setItem('rimpang_data_v2', JSON.stringify(dataToSave));
+                localStorage.setItem('rimpang_data_v3', JSON.stringify(dataToSave));
             } catch (e) {
                 console.warn("Penyimpanan cache penuh.");
-                alert("Gagal menyimpan otomatis. Ukuran foto mungkin terlalu besar, cobalah muat ulang aplikasi.");
             }
         }
 
@@ -214,7 +243,7 @@
 
             checklistData.forEach((category) => {
                 const catDiv = document.createElement('div');
-                catDiv.className = 'bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 print-break-inside-avoid print-mt-4 mb-6';
+                catDiv.className = 'bg-white rounded-xl shadow-md overflow-hidden border border-slate-200 print-break-inside-avoid print-mt-4 mb-6 export-block';
                 
                 let itemsHtml = '';
                 category.items.forEach((item) => {
@@ -285,15 +314,18 @@
 
             // Resizing auto untuk textarea
             document.querySelectorAll('textarea').forEach(el => {
-                el.addEventListener('input', function() {
-                    this.style.height = 'auto';
-                    this.style.height = (this.scrollHeight) + 'px';
-                });
-                if(el.value) {
-                    el.style.height = 'auto';
-                    el.style.height = (el.scrollHeight) + 'px';
-                }
+                el.addEventListener('input', function() { resizeTextarea(this); });
+                if(el.value) resizeTextarea(el);
             });
+        }
+
+        function resizeTextarea(el) {
+            el.style.height = 'auto';
+            el.style.height = (el.scrollHeight) + 'px';
+        }
+
+        function resizeAllTextareas() {
+            document.querySelectorAll('textarea').forEach(el => resizeTextarea(el));
         }
 
         function addCategory() {
@@ -344,11 +376,10 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                // Kompresi rasio gambar agar tidak overload cache memory (Base64)
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 800;
+                    const MAX_WIDTH = 800; // Kompresi untuk efisiensi render
                     let width = img.width;
                     let height = img.height;
                     
@@ -362,8 +393,7 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
                     
-                    // Kualitas 70% jpeg
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
                     
                     updateStateFromDOM();
                     const cat = checklistData.find(c => c.id === catId);
@@ -412,163 +442,178 @@
             document.getElementById('modalImage').style.transform = `scale(${currentScale})`;
         }
 
-        function getImageDimensions(base64) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                img.onload = () => resolve({ w: img.width, h: img.height });
-                img.onerror = () => resolve({ w: 200, h: 150 });
-                img.src = base64;
-            });
-        }
-
-        async function exportToExcel() {
+        function exportToWord() {
             updateStateFromDOM();
             
-            // Tambahkan animasi loading pada tombol ekspor
-            const btn = document.querySelector('button[onclick="exportToExcel()"]');
+            const btn = document.getElementById('btn-word');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses Ekspor...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses Word...';
             btn.disabled = true;
 
+            setTimeout(() => {
+                try {
+                    const eventName = document.getElementById('infoEvent').value || '-';
+                    const venueName = document.getElementById('infoVenue').value || '-';
+                    const dateVal = document.getElementById('infoDate').value || '-';
+                    const vendorName = document.getElementById('infoVendor').value || '-';
+                    const picVendor = document.getElementById('infoPicVendor').value || '(________________________)';
+                    const picRimpang = document.getElementById('infoPicRimpang').value || '(________________________)';
+
+                    // Membuat Struktur HTML Khusus Dokumen MS Word
+                    let htmlContent = `
+                        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                        <head>
+                            <meta charset='utf-8'>
+                            <title>Laporan Pekerjaan Lapangan</title>
+                            <style>
+                                body { font-family: Arial, sans-serif; font-size: 11pt; color: #333; }
+                                .text-center { text-align: center; }
+                                .title { font-size: 16pt; font-weight: bold; margin-bottom: 0px; }
+                                .subtitle { font-size: 12pt; color: #d97706; margin-top: 5px; font-weight: bold; }
+                                table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }
+                                th, td { border: 1px solid #94a3b8; padding: 8px; vertical-align: top; }
+                                th { background-color: #f1f5f9; font-weight: bold; text-align: left; }
+                                .info-table td { border: none; padding: 4px; }
+                                .cat-title { background-color: #e2e8f0; font-weight: bold; font-size: 12pt; padding: 10px; margin-top:20px; }
+                                .img-preview { max-width: 200px; max-height: 150px; border-radius: 4px; border: 1px solid #ccc; }
+                                .signature-table { border: none; width: 100%; margin-top: 50px; }
+                                .signature-table td { border: none; text-align: center; width: 50%; vertical-align: bottom; height: 120px; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="text-center">
+                                <p class="title">LAPORAN PEKERJAAN LAPANGAN</p>
+                                <p class="subtitle">RIMPANG DIGITAL KREATIF</p>
+                            </div>
+                            <hr style="margin-bottom: 20px;">
+                            
+                            <table class="info-table">
+                                <tr>
+                                    <td width="30%"><strong>Nama Event / Pameran</strong></td>
+                                    <td width="70%">: ${eventName}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Lokasi (Venue)</strong></td>
+                                    <td>: ${venueName}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Tanggal Pelaksanaan</strong></td>
+                                    <td>: ${dateVal}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Nama Vendor</strong></td>
+                                    <td>: ${vendorName}</td>
+                                </tr>
+                            </table>
+                    `;
+
+                    checklistData.forEach(cat => {
+                        htmlContent += `<div class="cat-title">${cat.title}</div>`;
+                        htmlContent += `
+                            <table>
+                                <tr>
+                                    <th width="20%">Pekerjaan</th>
+                                    <th width="20%">Keterangan 1</th>
+                                    <th width="20%">Keterangan 2</th>
+                                    <th width="20%">Keterangan 3</th>
+                                    <th width="20%">Foto</th>
+                                </tr>
+                        `;
+                        cat.items.forEach(item => {
+                            let imgTag = item.photo ? `<img src="${item.photo}" class="img-preview"/>` : '-';
+                            htmlContent += `
+                                <tr>
+                                    <td>${item.name}</td>
+                                    <td>${item.remarks[0] || ''}</td>
+                                    <td>${item.remarks[1] || ''}</td>
+                                    <td>${item.remarks[2] || ''}</td>
+                                    <td class="text-center">${imgTag}</td>
+                                </tr>
+                            `;
+                        });
+                        htmlContent += `</table>`;
+                    });
+
+                    htmlContent += `
+                            <table class="signature-table">
+                                <tr>
+                                    <td>
+                                        <p style="margin-bottom: 80px;"><b>PIC Vendor</b></p>
+                                        <p>${picVendor}</p>
+                                    </td>
+                                    <td>
+                                        <p style="margin-bottom: 80px;"><b>Supervisor / PIC Rimpang</b></p>
+                                        <p>${picRimpang}</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </body>
+                        </html>
+                    `;
+
+                    // Konversi ke Doc
+                    const blob = new Blob(['\ufeff', htmlContent], {
+                        type: 'application/msword'
+                    });
+                    
+                    const safeName = eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+                    const finalFileName = `Laporan_RIMPANG_${safeName}_${dateVal}.doc`;
+                    
+                    saveAs(blob, finalFileName);
+
+                } catch (error) {
+                    console.error(error);
+                    alert("Terjadi kesalahan saat mengekspor Word.");
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }, 100);
+        }
+
+        async function exportToJPG() {
+            updateStateFromDOM();
+            
+            const btn = document.getElementById('btn-jpg');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merender JPG...';
+            btn.disabled = true;
+
+            // Memastikan textarea tidak memiliki scroll sebelum render
+            resizeAllTextareas();
+
+            // Aktifkan mode ekspor untuk sembunyikan UI input/tombol
+            document.body.classList.add('export-mode');
+            const reportContainer = document.getElementById('main-report-container');
+            reportContainer.classList.add('export-mode-container');
+
             try {
-                const eventName = document.getElementById('infoEvent').value || '-';
-                const venueName = document.getElementById('infoVenue').value || '-';
-                const dateVal = document.getElementById('infoDate').value || '-';
-                const vendorName = document.getElementById('infoVendor').value || '-';
-                
-                const workbook = new ExcelJS.Workbook();
-                const sheet = workbook.addWorksheet('Laporan_Checklist');
-
-                // Konfigurasi lebar kolom
-                sheet.columns = [
-                    { header: '', key: 'cat', width: 25 },
-                    { header: '', key: 'pekerjaan', width: 35 },
-                    { header: '', key: 'ket1', width: 25 },
-                    { header: '', key: 'ket2', width: 25 },
-                    { header: '', key: 'ket3', width: 25 },
-                    { header: '', key: 'foto', width: 35 }
-                ];
-
-                // Menyusun Judul dan Informasi
-                sheet.mergeCells('A1:F1');
-                const titleCell = sheet.getCell('A1');
-                titleCell.value = 'LAPORAN PEKERJAAN LAPANGAN RIMPANG DIGITAL KREATIF';
-                titleCell.font = { bold: true, size: 14 };
-                titleCell.alignment = { horizontal: 'center' };
-                
-                sheet.getCell('A3').value = 'Event/Pameran';
-                sheet.getCell('B3').value = eventName;
-                sheet.getCell('A4').value = 'Venue';
-                sheet.getCell('B4').value = venueName;
-                sheet.getCell('A5').value = 'Tanggal';
-                sheet.getCell('B5').value = dateVal;
-                sheet.getCell('A6').value = 'Vendor';
-                sheet.getCell('B6').value = vendorName;
-                
-                ['A3', 'A4', 'A5', 'A6'].forEach(cell => {
-                    sheet.getCell(cell).font = { bold: true };
+                // Konfigurasi html2canvas - Scale 3 agar beresolusi tinggi (HD)
+                const canvas = await html2canvas(reportContainer, {
+                    scale: 3, 
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                    windowWidth: document.documentElement.offsetWidth,
+                    windowHeight: document.documentElement.offsetHeight,
                 });
 
-                // Menyusun Header Tabel Checklist
-                const headerRow = sheet.getRow(8);
-                headerRow.values = ['Kategori', 'Pekerjaan', 'Keterangan 1', 'Keterangan 2', 'Keterangan 3', 'Foto'];
-                headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-                headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
-                
-                for (let i = 1; i <= 6; i++) {
-                    const cell = headerRow.getCell(i);
-                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD97706' } }; // Warna kuning/amber
-                    cell.border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                }
-                
-                let currentRow = 9;
-
-                for (const cat of checklistData) {
-                    for (const item of cat.items) {
-                        const row = sheet.getRow(currentRow);
-                        row.values = [
-                            cat.title,
-                            item.name,
-                            item.remarks[0] || '',
-                            item.remarks[1] || '',
-                            item.remarks[2] || '',
-                            '' // Placeholder kosong untuk tempat menyematkan Foto
-                        ];
-                        
-                        row.alignment = { vertical: 'middle', wrapText: true };
-
-                        for (let i = 1; i <= 6; i++) {
-                            row.getCell(i).border = { top: {style:'thin'}, left: {style:'thin'}, bottom: {style:'thin'}, right: {style:'thin'} };
-                        }
-
-                        let rowHeight = 40;
-
-                        // Perhitungan dimensi foto agar rasio utuh masuk ke sel tabel
-                        if (item.photo) {
-                            try {
-                                const dims = await getImageDimensions(item.photo);
-                                const maxWidth = 200; 
-                                const maxHeight = 160; 
-                                
-                                const ratio = Math.min(maxWidth / dims.w, maxHeight / dims.h);
-                                const finalW = dims.w * ratio;
-                                const finalH = dims.h * ratio;
-
-                                rowHeight = (finalH * 0.75) + 20; // 0.75 konversi piksel gambar ke point baris Excel
-
-                                const base64Data = item.photo.split(',')[1];
-                                const imageId = workbook.addImage({
-                                    base64: base64Data,
-                                    extension: 'jpeg',
-                                });
-                                
-                                // Letakkan foto di dalam sheet
-                                sheet.addImage(imageId, {
-                                    tl: { col: 5.1, row: currentRow - 1 + 0.1 }, // Col 5 = Kolom F
-                                    ext: { width: finalW, height: finalH }
-                                });
-                            } catch (err) {
-                                console.error("Gagal menambahkan gambar:", err);
-                                row.getCell(6).value = "(Error Foto)";
-                            }
-                        }
-                        
-                        row.height = rowHeight;
-                        currentRow++;
-                    }
-                }
-
-                // Menyusun Kolom Tanda Tangan
-                currentRow += 2;
-                sheet.getCell(`B${currentRow}`).value = 'PIC Vendor';
-                sheet.getCell(`B${currentRow}`).font = { bold: true };
-                sheet.getCell(`B${currentRow}`).alignment = { horizontal: 'center' };
-                
-                sheet.getCell(`E${currentRow}`).value = 'Supervisor / PIC Rimpang';
-                sheet.getCell(`E${currentRow}`).font = { bold: true };
-                sheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
-
-                currentRow += 4;
-                const picVendor = document.getElementById('infoPicVendor').value || '(________________________)';
-                const picRimpang = document.getElementById('infoPicRimpang').value || '(________________________)';
-                
-                sheet.getCell(`B${currentRow}`).value = picVendor;
-                sheet.getCell(`B${currentRow}`).alignment = { horizontal: 'center' };
-                
-                sheet.getCell(`E${currentRow}`).value = picRimpang;
-                sheet.getCell(`E${currentRow}`).alignment = { horizontal: 'center' };
-
-                // Finalisasi dan Unduh File Excel
-                const buffer = await workbook.xlsx.writeBuffer();
+                const eventName = document.getElementById('infoEvent').value || 'Pekerjaan';
+                const dateVal = document.getElementById('infoDate').value || 'Tanggal';
                 const safeName = eventName.replace(/[^a-z0-9]/gi, '_').toLowerCase();
-                const finalFileName = `Laporan_RIMPANG_${safeName}_${dateVal}.xlsx`;
-                
-                saveAs(new Blob([buffer]), finalFileName);
+                const finalFileName = `Laporan_RIMPANG_${safeName}_${dateVal}.jpg`;
+
+                // Convert Canvas ke Blob (JPEG Kualitas 95%)
+                canvas.toBlob(function(blob) {
+                    saveAs(blob, finalFileName);
+                }, 'image/jpeg', 0.95);
+
             } catch (error) {
-                console.error(error);
-                alert("Terjadi kesalahan saat mengekspor Excel. Pastikan data tidak korup.");
+                console.error("Gagal export JPG:", error);
+                alert("Terjadi kesalahan saat merender JPG. Coba perkecil ukuran window.");
             } finally {
-                // Kembalikan tombol ke keadaan semula
+                // Matikan mode ekspor, kembalikan UI normal
+                document.body.classList.remove('export-mode');
+                reportContainer.classList.remove('export-mode-container');
                 btn.innerHTML = originalText;
                 btn.disabled = false;
             }
