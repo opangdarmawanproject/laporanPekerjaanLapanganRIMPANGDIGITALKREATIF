@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Pekerjaan Lapangan - RIMPANG DIGITAL KREATIF</title>
+    
+    <!-- Tailwind CSS for elegant styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .brand-font {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Print Specific Styles */
+        @media print {
+            body { 
+                background-color: white !important; 
+                padding: 0 !important;
+                margin: 0 !important;
+                font-size: 11pt;
+            }
+            .no-print { 
+                display: none !important; 
+            }
+            .print-break-inside-avoid {
+                break-inside: avoid;
+            }
+            .print-shadow-none {
+                box-shadow: none !important;
+                border: 1px solid #e2e8f0 !important;
+            }
+            input, textarea, select {
+                border: none !important;
+                background: transparent !important;
+                resize: none !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                color: black !important;
+                -webkit-appearance: none;
+            }
+            textarea {
+                overflow: hidden !important;
+            }
+            /* Hide file inputs on print, keep images */
+            input[type="file"] {
+                display: none !important;
+            }
+            /* Expand page size for PDF */
+            @page {
+                size: A4;
+                margin: 10mm;
+            }
+        }
+        
+        /* Image Preview styling */
+        .img-preview {
+            max-height: 200px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            border: 2px solid #e2e8f0;
+            display: none;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden print-shadow-none">
+        
+        <!-- Header Section -->
+        <div class="bg-slate-900 text-white p-8 border-b-4 border-amber-500 flex flex-col md:flex-row items-center justify-between gap-6 print:bg-white print:text-slate-900 print:border-slate-800">
+            <div class="text-center md:text-left">
+                <h1 class="text-3xl md:text-4xl font-bold brand-font text-amber-500 print:text-slate-900 mb-2">RIMPANG DIGITAL KREATIF</h1>
+                <h2 class="text-xl md:text-2xl font-light tracking-wide text-slate-300 print:text-slate-700">LAPORAN PEKERJAAN LAPANGAN (VENDOR)</h2>
+            </div>
+            <div class="no-print flex gap-3">
+                <button onclick="window.print()" class="bg-white/10 hover:bg-white/20 text-white px-5 py-2.5 rounded-lg border border-white/20 transition duration-200 flex items-center gap-2 backdrop-blur-sm">
+                    <i class="fas fa-print"></i> Print / Simpan PDF
+                </button>
+                <button onclick="exportToExcel()" class="bg-amber-500 hover:bg-amber-600 text-slate-900 font-medium px-5 py-2.5 rounded-lg transition duration-200 flex items-center gap-2 shadow-lg shadow-amber-500/30">
+                    <i class="fas fa-file-excel"></i> Ekspor Excel
+                </button>
+            </div>
+        </div>
+
+        <div class="p-8 space-y-8">
+            
+            <!-- Informasi Acara -->
+            <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 print:bg-white print:p-0 print:border-none">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 uppercase tracking-wider flex items-center gap-2 border-b pb-2">
+                    <i class="fas fa-info-circle text-amber-500"></i> Informasi Pameran / Acara
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Nama Event</label>
+                        <input type="text" id="infoEvent" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" placeholder="Contoh: Pameran Otomotif Nasional 2026">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Lokasi / Venue</label>
+                        <input type="text" id="infoVenue" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" placeholder="Contoh: JCC Senayan, Hall A">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Tanggal Pekerjaan</label>
+                        <input type="date" id="infoDate" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">Nama Vendor / Kontraktor</label>
+                        <input type="text" id="infoVendor" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" placeholder="Masukkan nama vendor">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">PIC Rimpang Digital</label>
+                        <input type="text" id="infoPicRimpang" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" placeholder="Nama Supervisor">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-600 mb-1">PIC Vendor</label>
+                        <input type="text" id="infoPicVendor" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition" placeholder="Nama Penanggung Jawab Vendor">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Checklist Area -->
+            <div id="checklist-container" class="space-y-6">
+                <!-- Javascript will populate this area -->
+            </div>
+
+            <!-- Tombol Tambah Kategori Baru -->
+            <div class="mt-6 flex justify-center no-print">
+                <button onclick="addGlobalCategory()" class="bg-slate-800 hover:bg-slate-900 text-white font-medium px-6 py-3 rounded-lg transition duration-200 flex items-center gap-2 shadow-lg shadow-slate-800/30">
+                    <i class="fas fa-folder-plus text-amber-400"></i> Tambah Kategori Checklist
+                </button>
+            </div>
+
+            <!-- Signature Area -->
+            <div class="mt-12 pt-8 border-t-2 border-dashed border-slate-300 print-break-inside-avoid">
+                <div class="grid grid-cols-2 gap-8 text-center">
+                    <div>
+                        <p class="text-sm font-semibold text-slate-600 mb-20">PIC Vendor</p>
+                        <div class="border-b border-slate-400 w-2/3 mx-auto"></div>
+                        <p class="text-xs text-slate-500 mt-2">Nama Terang & Tanda Tangan</p>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-slate-600 mb-20">Supervisor / PIC Rimpang Digital Kreatif</p>
+                        <div class="border-b border-slate-400 w-2/3 mx-auto"></div>
+                        <p class="text-xs text-slate-500 mt-2">Nama Terang & Tanda Tangan</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Data Structure awal untuk Exhibition Checklist
+        const initialChecklistData = [
+            {
+                id: 'cat-1',
+                title: 'Konstruksi & Struktural Booth',
+                icon: 'fa-hammer',
+                items: [
+                    { id: 'item-1-1', name: 'Pemasangan Lantai / Flooring (Karpet/Melaminto)' },
+                    { id: 'item-1-2', name: 'Pendirian Dinding Partisi / Struktur Utama' },
+                    { id: 'item-1-3', name: 'Pemasangan Fascia, Logo & Hanging Banner' },
+                    { id: 'item-1-4', name: 'Kualitas Pengecatan & Finishing Permukaan' }
+                ]
+            },
+            {
+                id: 'cat-2',
+                title: 'Kelistrikan & Pencahayaan',
+                icon: 'fa-bolt',
+                items: [
+                    { id: 'item-2-1', name: 'Instalasi Panel Listrik & Penarikan Kabel Utama' },
+                    { id: 'item-2-2', name: 'Pemasangan Lampu General & Spotlight' },
+                    { id: 'item-2-3', name: 'Pemasangan Stop Kontak & Kerapihan Jalur Kabel' }
+                ]
+            },
+            {
+                id: 'cat-3',
+                title: 'Multimedia, Audio & Visual',
+                icon: 'fa-tv',
+                items: [
+                    { id: 'item-3-1', name: 'Pemasangan LED Screen / TV (Rigging & Fungsi)' },
+                    { id: 'item-3-2', name: 'Aplikasi Stiker, Backdrop & Graphic Panel' },
+                    { id: 'item-3-3', name: 'Instalasi & Uji Coba Audio System' }
+                ]
+            },
+            {
+                id: 'cat-4',
+                title: 'Furnitur, Dekorasi & Serah Terima',
+                icon: 'fa-couch',
+                items: [
+                    { id: 'item-4-1', name: 'Penempatan Meja, Kursi & Display Counter' },
+                    { id: 'item-4-2', name: 'Pemasangan Tanaman & Elemen Dekorasi' },
+                    { id: 'item-4-3', name: 'Kebersihan Area Booth (Cleaning)' }
+                ]
+            }
+        ];
+
+        // Fungsi untuk menghasilkan HTML per item (sub-point) yang bisa diedit
+        function generateItemHTML(item) {
+            const uniqueId = item.id || `item-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            return `
+                <div class="item-row p-6 transition hover:bg-slate-50 print:p-4 border-b border-slate-100 last:border-0" id="row_${uniqueId}" data-item-id="${uniqueId}">
+                    <div class="flex flex-col md:flex-row justify-between md:items-start gap-4 mb-4">
+                        <div class="flex-1 flex items-start gap-2">
+                            <!-- Indikator point bullet -->
+                            <i class="fas fa-caret-right text-slate-300 mt-1.5 no-print"></i>
+                            <textarea rows="1" class="item-name-input text-lg font-semibold text-slate-800 bg-transparent border-b border-transparent hover:border-slate-300 focus:border-amber-500 focus:bg-white w-full outline-none transition-colors resize-none overflow-hidden print:border-none print:p-0 print:bg-transparent" placeholder="Ketik nama pekerjaan / sub-point...">${item.name}</textarea>
+                        </div>
+                        <div class="flex gap-4 md:w-1/3 shrink-0">
+                            <select class="item-status-select w-full bg-slate-100 border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block p-2.5 font-semibold">
+                                <option value="Belum Mulai">⚪ Belum Mulai</option>
+                                <option value="Sedang Proses">🟡 Sedang Proses</option>
+                                <option value="Selesai (Baik)">🟢 Selesai (Baik)</option>
+                                <option value="Selesai (Ada Catatan)">🟠 Selesai (Ada Catatan)</option>
+                                <option value="Terdapat Kendala/Isu">🔴 Terdapat Kendala/Isu</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 3 Sub Points Input -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase"><i class="fas fa-check-double text-blue-500 mr-1"></i> 1. Spesifikasi & Ukuran</label>
+                            <textarea class="sub1-input w-full bg-white border border-slate-200 text-sm rounded-md p-2 focus:ring-2 focus:ring-amber-500 outline-none overflow-hidden" rows="2" placeholder="Apakah sesuai dengan desain/render?"></textarea>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase"><i class="fas fa-search text-emerald-500 mr-1"></i> 2. Kualitas & Kerapihan</label>
+                            <textarea class="sub2-input w-full bg-white border border-slate-200 text-sm rounded-md p-2 focus:ring-2 focus:ring-amber-500 outline-none overflow-hidden" rows="2" placeholder="Kondisi material, finishing, dll."></textarea>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <label class="block text-xs font-bold text-slate-500 mb-1 uppercase"><i class="fas fa-exclamation-circle text-rose-500 mr-1"></i> 3. Catatan / Tindak Lanjut</label>
+                            <textarea class="sub3-input w-full bg-white border border-slate-200 text-sm rounded-md p-2 focus:ring-2 focus:ring-amber-500 outline-none overflow-hidden" rows="2" placeholder="Isu yang ditemukan / perbaikan."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- High Res Photo Upload & Preview -->
+                    <div class="mt-3">
+                        <label class="block text-xs font-bold text-slate-600 mb-2 uppercase"><i class="fas fa-camera text-slate-400 mr-1"></i> Dokumentasi Foto (Resolusi Tinggi)</label>
+                        <div class="flex flex-col gap-3">
+                            <input type="file" accept="image/*" class="file-input no-print block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100 transition cursor-pointer" onchange="handleImageUpload(event, 'preview_${uniqueId}')">
+                            <img id="preview_${uniqueId}" class="img-preview shadow-sm" alt="Preview Foto">
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Fungsi merender satu blok kategori utuh
+        function generateCategoryHTML(category, catIndex) {
+            let itemsHTML = '';
+            category.items.forEach((item) => {
+                itemsHTML += generateItemHTML(item);
+            });
+
+            return `
+            <div class="category-block bg-white border-2 border-slate-200 rounded-xl overflow-hidden print-break-inside-avoid print-shadow-none mb-6" id="block_${category.id}" data-cat-id="${category.id}">
+                <div class="bg-slate-800 text-white px-6 py-3 flex items-center justify-between gap-3 print:bg-slate-200 print:text-slate-900 print:border-b print:border-slate-800">
+                    <div class="flex items-center gap-3 flex-1">
+                        <i class="fas ${category.icon || 'fa-list-check'} text-amber-400"></i>
+                        <span class="text-xl font-bold uppercase tracking-wide cat-number-label">${catIndex + 1}.</span>
+                        <!-- Input yang menyamar sebagai teks tebal untuk judul kategori -->
+                        <input type="text" class="cat-title-input text-xl font-bold uppercase tracking-wide bg-transparent border-b border-transparent hover:border-white/30 focus:border-amber-400 focus:bg-slate-700 w-full outline-none transition-colors py-1 px-2 -ml-2 rounded print:text-slate-900 print:border-none print:p-0" value="${category.title}" placeholder="Judul Kategori...">
+                    </div>
+                </div>
+                
+                <div class="category-items-container divide-y divide-slate-100" id="items_${category.id}">
+                    ${itemsHTML}
+                </div>
+                
+                <!-- Tombol Tambah Item -->
+                <div class="no-print p-4 bg-slate-50 border-t border-slate-200 flex justify-center">
+                    <button onclick="addNewItem('${category.id}')" class="text-sm font-semibold text-amber-600 hover:text-amber-700 bg-amber-100 hover:bg-amber-200 px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                        <i class="fas fa-plus-circle"></i> Tambah Sub-point Baru
+                    </button>
+                </div>
+            </div>`;
+        }
+
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            let html = '';
+
+            initialChecklistData.forEach((category, index) => {
+                html += generateCategoryHTML(category, index);
+            });
+
+            container.innerHTML = html;
+            adjustAllTextareas();
+        }
+
+        // Fungsi menambahkan sub point baru ke kategori spesifik langsung di UI
+        function addNewItem(categoryId) {
+            const container = document.getElementById(`items_${categoryId}`);
+            if (!container) return;
+
+            const newItem = { id: `item-${Date.now()}`, name: '' };
+            container.insertAdjacentHTML('beforeend', generateItemHTML(newItem));
+            
+            // Fokus otomatis ke input item baru
+            const newRow = document.getElementById(`row_${newItem.id}`);
+            if(newRow) {
+                const textarea = newRow.querySelector('.item-name-input');
+                if(textarea) textarea.focus();
+            }
+        }
+
+        // Fungsi menambah kategori baru (Global)
+        function addGlobalCategory() {
+            const container = document.getElementById('checklist-container');
+            const catCount = document.querySelectorAll('.category-block').length;
+            
+            const newCategory = {
+                id: `cat-${Date.now()}`,
+                title: 'KATEGORI BARU',
+                icon: 'fa-folder-open',
+                items: [ { id: `item-${Date.now()}-1`, name: '' } ] // Termasuk 1 item kosong sebagai awal
+            };
+
+            container.insertAdjacentHTML('beforeend', generateCategoryHTML(newCategory, catCount));
+            
+            // Fokus otomatis ke judul kategori baru
+            const newBlock = document.getElementById(`block_${newCategory.id}`);
+            if(newBlock) {
+                const titleInput = newBlock.querySelector('.cat-title-input');
+                if(titleInput) {
+                    titleInput.focus();
+                    titleInput.select();
+                }
+            }
+        }
+
+        // Event delegation untuk auto-expand textarea secara dinamis
+        document.addEventListener('input', function(event) {
+            if (event.target.tagName.toLowerCase() === 'textarea') {
+                event.target.style.height = 'auto';
+                event.target.style.height = (event.target.scrollHeight) + 'px';
+            }
+        });
+
+        // Menyesuaikan tinggi textarea saat pertama kali load
+        function adjustAllTextareas() {
+            document.querySelectorAll('textarea').forEach(textarea => {
+                textarea.style.height = 'auto';
+                textarea.style.height = (textarea.scrollHeight) + 'px';
+            });
+        }
+
+        // Handle Image Upload & Preview Object URL
+        function handleImageUpload(event, previewId) {
+            const file = event.target.files[0];
+            const previewElement = document.getElementById(previewId);
+            
+            if (file) {
+                if (previewElement.src) URL.revokeObjectURL(previewElement.src);
+                previewElement.src = URL.createObjectURL(file);
+                previewElement.style.display = 'block';
+            } else {
+                previewElement.src = '';
+                previewElement.style.display = 'none';
+            }
+        }
+
+        // Function to extract data from DOM and export to Excel
+        function exportToExcel() {
+            const eventName = document.getElementById('infoEvent').value || '-';
+            const venue = document.getElementById('infoVenue').value || '-';
+            const date = document.getElementById('infoDate').value || '-';
+            const vendor = document.getElementById('infoVendor').value || '-';
+            const picRimpang = document.getElementById('infoPicRimpang').value || '-';
+            const picVendor = document.getElementById('infoPicVendor').value || '-';
+
+            let wsData = [
+                ["LAPORAN PEKERJAAN LAPANGAN - RIMPANG DIGITAL KREATIF"],
+                [],
+                ["INFORMASI ACARA"],
+                ["Nama Event", eventName, "", "Vendor", vendor],
+                ["Lokasi / Venue", venue, "", "PIC Rimpang", picRimpang],
+                ["Tanggal", date, "", "PIC Vendor", picVendor],
+                [],
+                ["RINCIAN CHECKLIST PEKERJAAN"],
+                ["No", "Kategori / Item Pekerjaan", "Status", "1. Spesifikasi & Ukuran", "2. Kualitas & Kerapihan", "3. Catatan / Tindak Lanjut", "Status Foto"]
+            ];
+
+            // Baca struktur DOM secara real-time untuk mengambil data terbaru termasuk yang diedit user
+            const categoryBlocks = document.querySelectorAll('.category-block');
+            categoryBlocks.forEach((catBlock, catIndex) => {
+                
+                const catTitle = catBlock.querySelector('.cat-title-input').value || 'Tanpa Kategori';
+                wsData.push([`${catIndex + 1}. ${catTitle}`, "", "", "", "", "", ""]);
+                
+                const itemRows = catBlock.querySelectorAll('.item-row');
+                itemRows.forEach((itemRow, itemIndex) => {
+                    const itemName = itemRow.querySelector('.item-name-input').value;
+                    const status = itemRow.querySelector('.item-status-select').value;
+                    const sub1 = itemRow.querySelector('.sub1-input').value;
+                    const sub2 = itemRow.querySelector('.sub2-input').value;
+                    const sub3 = itemRow.querySelector('.sub3-input').value;
+                    
+                    const fileInput = itemRow.querySelector('.file-input');
+                    const hasPhoto = (fileInput && fileInput.files && fileInput.files.length > 0) ? "Terlampir" : "Tidak Ada";
+
+                    wsData.push([
+                        `${catIndex + 1}.${itemIndex + 1}`,
+                        itemName,
+                        status,
+                        sub1,
+                        sub2,
+                        sub3,
+                        hasPhoto
+                    ]);
+                });
+            });
+
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            const wscols = [
+                {wch: 8}, {wch: 40}, {wch: 20}, {wch: 35}, {wch: 35}, {wch: 35}, {wch: 15}
+            ];
+            ws['!cols'] = wscols;
+
+            XLSX.utils.book_append_sheet(wb, ws, "Laporan_Pekerjaan");
+            const fileName = `Laporan_Vendor_${eventName.replace(/\s+/g, '_')}_${date}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        }
+
+        // Initialize App
+        window.onload = () => {
+            renderChecklist();
+            document.getElementById('infoDate').valueAsDate = new Date();
+        };
+
+        // Memastikan seluruh teks muncul saat print
+        window.addEventListener('beforeprint', adjustAllTextareas);
+    </script>
+</body>
+</html>
