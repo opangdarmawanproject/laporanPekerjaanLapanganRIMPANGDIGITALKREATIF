@@ -102,7 +102,7 @@
                     <input type="date" id="infoDate" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition" onchange="saveData()">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Nama PIC</label>
+                    <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Nama Vendor</label>
                     <input type="text" id="infoVendor" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition" placeholder="Masukkan Nama Vendor" onchange="saveData()">
                 </div>
             </div>
@@ -121,12 +121,12 @@
         <div class="mt-16 pt-8 border-t-2 border-slate-200 print-break-inside-avoid export-block pb-8">
             <div class="grid grid-cols-2 gap-8 text-center">
                 <div>
-                    <p class="text-sm font-semibold text-slate-600 mb-24">PIC</p>
+                    <p class="text-sm font-semibold text-slate-600 mb-24">PIC Vendor</p>
                     <div class="border-b border-slate-400 w-3/4 mx-auto mb-2"></div>
                     <input type="text" id="infoPicVendor" class="text-sm text-center bg-transparent focus:outline-none w-full font-medium" placeholder="Nama Terang & Tanda Tangan" onchange="saveData()">
                 </div>
                 <div>
-                    <p class="text-sm font-semibold text-slate-600 mb-24">Supervisor Rimpang</p>
+                    <p class="text-sm font-semibold text-slate-600 mb-24">Supervisor / PIC Rimpang</p>
                     <div class="border-b border-slate-400 w-3/4 mx-auto mb-2"></div>
                     <input type="text" id="infoPicRimpang" class="text-sm text-center bg-transparent focus:outline-none w-full font-medium" placeholder="Nama Terang & Tanda Tangan" onchange="saveData()">
                 </div>
@@ -473,6 +473,10 @@
                             <meta charset='utf-8'>
                             <title>Laporan Pekerjaan Lapangan</title>
                             <style>
+                                /* Pengaturan khusus MS Word agar otomatis Landscape */
+                                @page Section1 { size: 841.9pt 595.3pt; mso-page-orientation: landscape; margin: 1in; }
+                                div.Section1 { page: Section1; }
+                                
                                 body { font-family: Arial, sans-serif; font-size: 11pt; color: #333; }
                                 .text-center { text-align: center; }
                                 .title { font-size: 16pt; font-weight: bold; margin-bottom: 0px; }
@@ -488,30 +492,31 @@
                             </style>
                         </head>
                         <body>
-                            <div class="text-center">
-                                <p class="title">LAPORAN PEKERJAAN LAPANGAN</p>
-                                <p class="subtitle">RIMPANG DIGITAL KREATIF</p>
-                            </div>
-                            <hr style="margin-bottom: 20px;">
-                            
-                            <table class="info-table">
-                                <tr>
-                                    <td width="30%"><strong>Nama Event / Pameran</strong></td>
-                                    <td width="70%">: ${eventName}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Lokasi (Venue)</strong></td>
-                                    <td>: ${venueName}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Tanggal Pelaksanaan</strong></td>
-                                    <td>: ${dateVal}</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>Nama Vendor</strong></td>
-                                    <td>: ${vendorName}</td>
-                                </tr>
-                            </table>
+                            <div class="Section1">
+                                <div class="text-center">
+                                    <p class="title">LAPORAN PEKERJAAN LAPANGAN</p>
+                                    <p class="subtitle">RIMPANG DIGITAL KREATIF</p>
+                                </div>
+                                <hr style="margin-bottom: 20px;">
+                                
+                                <table class="info-table">
+                                    <tr>
+                                        <td width="30%"><strong>Nama Event / Pameran</strong></td>
+                                        <td width="70%">: ${eventName}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Lokasi (Venue)</strong></td>
+                                        <td>: ${venueName}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Tanggal Pelaksanaan</strong></td>
+                                        <td>: ${dateVal}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Nama Vendor</strong></td>
+                                        <td>: ${vendorName}</td>
+                                    </tr>
+                                </table>
                     `;
 
                     checklistData.forEach(cat => {
@@ -554,6 +559,7 @@
                                     </td>
                                 </tr>
                             </table>
+                            </div>
                         </body>
                         </html>
                     `;
